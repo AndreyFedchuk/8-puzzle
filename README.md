@@ -1,5 +1,5 @@
 # 8-puzzle
-### Algorithm: A* h1 (misplaced tiles) and DLS (depth limited search). 
+### Algorithm: A* h1, h2 (misplaced tiles, manhattan distance) and DLS (depth limited search). 
 ###Based on Qt 5.7 (MSVC 64 bit).
 ####© Hudz A.P., 2017
 ####email: andrey.hudz.90@gmail.com 
