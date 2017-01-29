@@ -9,12 +9,14 @@
 IAlgorithm::IAlgorithm(const int limitNodes,
                        const int limitTime,
                        const size_t limitMemory,
+                       const int heuristic,
                        QObject *parent) :
     QObject(parent),
     m_LimitNodes(limitNodes),
     m_LimitTime(limitTime),
     m_LimitMemory(limitMemory)
 {
+    m_Heuristic = static_cast<modeHeuristic>(heuristic);
     m_Time = 0;
     m_CreatedNodes = 0;
     m_Stop = false;

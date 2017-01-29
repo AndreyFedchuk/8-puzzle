@@ -43,6 +43,7 @@ public:
                             const int limitNodes,
                             const int limitTime,
                             const size_t limitMemory,
+                            const int heuristic,
                             const QVector<int> FinalState = {1,2,3,4,5,6,7,8,0},
                             IAlgorithm * parent = nullptr);
     ~AlgorithmAstar();

@@ -17,13 +17,16 @@ class IAlgorithm : public QObject
     Q_OBJECT
 public:
     IAlgorithm(const int limitNodes,
-               const int limitTime, const size_t limitMemory,
+               const int limitTime,
+               const size_t limitMemory,
+               const int heuristic,
                QObject * parent = nullptr);
 
     virtual bool solvePuzzle() = 0;
     virtual QList<QVector<int> > getSolution(int &moves) const = 0;
 
     int getTime() const;
+
 
 public slots:
     void runSolve();
@@ -36,6 +39,9 @@ signals:
 
 protected:
     enum class modeMove{up, down, right, left, size};
+    enum class modeHeuristic{none,
+                             misplacedTiles,
+                             manhattenDistance};
 
     int m_Time;
     bool m_Stop;
@@ -43,6 +49,7 @@ protected:
     int m_LimitTime;
     size_t m_LimitMemory;
     int m_CreatedNodes;
+    modeHeuristic m_Heuristic;
 };
 
 #endif // IALGORITHM_H

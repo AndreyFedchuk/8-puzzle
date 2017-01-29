@@ -38,6 +38,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->comboBoxALGO->addItem("A* H1 (Number of Misplaced tiles)");
     ui->comboBoxALGO->addItem("DLS (Depth Limited Search)");
+    ui->comboBoxALGO->addItem("A* H2 (Manhattan Distance)");
+
+    ui->comboBoxALGO->setCurrentIndex(2);
 
     parse();
     display();
@@ -166,13 +169,18 @@ void MainWindow::updateData()
     case 0:
         if(m_pAlgorithm != nullptr)
             delete m_pAlgorithm;
-        m_pAlgorithm = new AlgorithmAstar(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory);
+        m_pAlgorithm = new AlgorithmAstar(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory, 1);
         break;
 
     case 1:
         if(m_pAlgorithm != nullptr)
             delete m_pAlgorithm;
-        m_pAlgorithm = new AlgorithmDLS(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory);
+        m_pAlgorithm = new AlgorithmDLS(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory, 0);
+        break;
+    case 2:
+        if(m_pAlgorithm != nullptr)
+            delete m_pAlgorithm;
+        m_pAlgorithm = new AlgorithmAstar(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory, 2);
         break;
 
     default:

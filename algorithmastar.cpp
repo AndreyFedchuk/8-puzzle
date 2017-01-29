@@ -9,9 +9,10 @@
 AlgorithmAstar::AlgorithmAstar(const QVector<int> &State,
                                const int limitNodes,
                                const int limitTime, const size_t limitMemory,
+                               const int heuristic,
                                const QVector<int> FinalState,
                                IAlgorithm *parent) :
-    IAlgorithm(limitNodes, limitTime, limitMemory, parent)
+    IAlgorithm(limitNodes, limitTime, limitMemory, heuristic, parent)
 {
     m_StartState = State;
     m_GoalState = FinalState;
@@ -83,12 +84,37 @@ void AlgorithmAstar::makeRoot()
 }
 
 
-int AlgorithmAstar::costCalculator(const Node * const pCurNode) const // h1
+int AlgorithmAstar::costCalculator(const Node * const pCurNode) const // h1 or h2
 {
     int cost(0);
-    for(auto i(0); i < pCurNode->nodeState.size(); i++)
-        if(pCurNode->nodeState[i] != m_GoalState.at(i))
-            cost++;
+
+    if(m_Heuristic == modeHeuristic::misplacedTiles)
+    {
+        for(auto i(0); i < pCurNode->nodeState.size(); i++)
+            if(pCurNode->nodeState[i] != m_GoalState.at(i))
+                cost++;
+    }
+    else if(m_Heuristic == modeHeuristic::manhattenDistance)
+    {
+        int distances[9][9] ={
+
+            //////*0 1 2 3 4 5 6 7 8*//////
+            /*1*/{ 4,0,1,2,1,2,3,2,3 }/*1*/,
+            /*2*/{ 0,1,0,1,2,1,2,3,2 }/*2*/,
+            /*3*/{ 2,2,1,0,3,2,1,4,3 }/*3*/,
+            /*4*/{ 3,1,2,3,0,1,2,1,2 }/*4*/,
+            /*5*/{ 2,2,1,2,1,0,1,2,1 }/*5*/,
+            /*6*/{ 1,3,2,1,2,1,0,3,2 }/*6*/,
+            /*7*/{ 2,2,3,4,1,2,3,0,1 }/*7*/,
+            /*8*/{ 1,3,2,3,2,1,2,1,0 }/*8*/,
+            /*0*/{ 0,4,3,2,3,2,1,2,1 }/*0*/
+            //////*0 1 2 3 4 5 6 7 8*//////
+        };
+
+        for(int i = 0; i < pCurNode->nodeState.size(); i++) {
+            cost += distances[i][pCurNode->nodeState[i]];
+        }
+    }
 
     return cost;
 }
