@@ -49,7 +49,7 @@ private:
 
     QMap<int, QPointF>* m_pMapCoordPuzzle;
     QList<QGraphicsItem*> m_listGraphicsItem;
-    QVector<int> m_Numbers;
+    QVector<int> m_StartState;
     bool m_ShowedSolution;
 
     IAlgorithm * m_pAlgorithm;
@@ -61,9 +61,10 @@ private:
     int m_LimitTime;
     size_t m_LimitMemory;
 
-    bool parse();
+    bool parsingAndChecking();
     void display(const QVector<int> * const pPuzzleNumbers = nullptr);
     void updateData();
+    bool checkSolvability(const QVector<int> &startState);
 };
 
 #endif // MAINWINDOW_H

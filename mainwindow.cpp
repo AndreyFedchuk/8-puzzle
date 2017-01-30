@@ -42,9 +42,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->comboBoxALGO->setCurrentIndex(2);
 
-    parse();
+    parsingAndChecking();
     display();
     updateData();
+
+    srand(time(0)); // for std::random_shuffle
 }
 
 MainWindow::~MainWindow()
@@ -57,7 +59,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_btnSolve_clicked()
 {
-    if(parse())
+    if(parsingAndChecking())
     {
         ui->btnSolve->setEnabled(false);
 
@@ -80,9 +82,9 @@ void MainWindow::on_btnSolve_clicked()
 
 }
 
-bool MainWindow::parse()
+bool MainWindow::parsingAndChecking()
 {
-    m_Numbers.clear();
+    m_StartState.clear();
 
     bool bOk(true);
     QString sNumbers = ui->lineEdit->displayText();
@@ -90,19 +92,19 @@ bool MainWindow::parse()
     {
         QString str(ch);
         int number = str.toInt();
-        if(m_Numbers.contains(number) || number == 9 || number < 0)
+        if(m_StartState.contains(number) || number == 9 || number < 0)
         {
             bOk = false;
-            m_Numbers.clear();
+            m_StartState.clear();
             break;
         }
-        m_Numbers.append(str.toInt());
+        m_StartState.append(str.toInt());
     }
 
-    if(bOk == false || m_Numbers.size() != SIZE)
+    if(!bOk || m_StartState.size() != SIZE)
     {
         bOk = false;
-        m_Numbers.clear();
+        m_StartState.clear();
         QMessageBox * msg = new QMessageBox(QMessageBox::Critical,
                                 "Not a valid input!",
                                 "The numbers must not repeat.\n "
@@ -111,6 +113,18 @@ bool MainWindow::parse()
         msg->exec();
         msg->deleteLater();
     }
+    else if(!checkSolvability(m_StartState))
+    {
+        bOk = false;
+        m_StartState.clear();
+        QMessageBox * msg = new QMessageBox(QMessageBox::Critical,
+                                "Unsolvable!",
+                                "This set of puzzles unsolvable",
+                                QMessageBox::Ok);
+        msg->exec();
+        msg->deleteLater();
+    }
+
 
     return bOk;
 }
@@ -121,9 +135,9 @@ void MainWindow::display(const QVector<int> * const pPuzzleNumbers)
     scene->clear();
 
     if(pPuzzleNumbers != nullptr)
-        m_Numbers = *pPuzzleNumbers;
+        m_StartState = *pPuzzleNumbers;
     int index = 1;
-    foreach(auto Num, m_Numbers)
+    foreach(auto Num, m_StartState)
     {
         if(Num > 0)
         {
@@ -169,18 +183,18 @@ void MainWindow::updateData()
     case 0:
         if(m_pAlgorithm != nullptr)
             delete m_pAlgorithm;
-        m_pAlgorithm = new AlgorithmAstar(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory, 1);
+        m_pAlgorithm = new AlgorithmAstar(m_StartState, m_LimitStates, m_LimitTime, m_LimitMemory, 1);
         break;
 
     case 1:
         if(m_pAlgorithm != nullptr)
             delete m_pAlgorithm;
-        m_pAlgorithm = new AlgorithmDLS(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory, 0);
+        m_pAlgorithm = new AlgorithmDLS(m_StartState, m_LimitStates, m_LimitTime, m_LimitMemory, 0);
         break;
     case 2:
         if(m_pAlgorithm != nullptr)
             delete m_pAlgorithm;
-        m_pAlgorithm = new AlgorithmAstar(m_Numbers, m_LimitStates, m_LimitTime, m_LimitMemory, 2);
+        m_pAlgorithm = new AlgorithmAstar(m_StartState, m_LimitStates, m_LimitTime, m_LimitMemory, 2);
         break;
 
     default:
@@ -193,10 +207,33 @@ void MainWindow::updateData()
     ui->btnShowSolution->setEnabled(false);
 }
 
+bool MainWindow::checkSolvability(const QVector<int> &startState)
+{
+    int inversions = 0;
+    for (int i(0); i < (SIZE); ++i)
+        for (int j(i); j < (SIZE); ++j)
+            if (startState[i] > startState[j]
+                    && startState[j] != 0)
+                inversions++;
+
+    return (inversions % 2 == 0);
+}
+
 void MainWindow::on_btnShuffle_clicked()
 {
-    QString str = "123456780";
-    std::random_shuffle(str.begin(), str.end());
+    QVector<int> startState({1,2,3,4,5,6,7,8,0});
+
+    do
+    {
+        std::random_shuffle(startState.begin(), startState.end());
+    }
+    while(!checkSolvability(startState));
+
+    QString str("");
+
+    foreach(auto integer, startState)
+        str += QString::number(integer);
+
     ui->lineEdit->setText(str);
 }
 
@@ -256,11 +293,11 @@ void MainWindow::printResult(bool success)
     else
     {
         QMessageBox::information(this,
-                                 "Unsolvable!",
-                                 "This set of puzzles unsolvable",
+                                 "Stoped!",
+                                 "The search was stopped.",
                                  QMessageBox::Ok);
-        m_Numbers = {1,2,3,4,5,6,7,8,0};
-        display(&m_Numbers);
+        m_StartState = {1,2,3,4,5,6,7,8,0};
+        display(&m_StartState);
     }
 
     ui->btnSolve->setEnabled(true);
