@@ -12,6 +12,10 @@
 #include <QList>
 #include <ctime>
 
+enum class modeHeuristic{none,
+                         misplacedTiles,
+                         manhattenDistance};
+
 class IAlgorithm : public QObject
 {
     Q_OBJECT
@@ -19,7 +23,7 @@ public:
     IAlgorithm(const int limitNodes,
                const int limitTime,
                const size_t limitMemory,
-               const int heuristic,
+               const modeHeuristic mode,
                QObject * parent = nullptr);
 
     virtual bool solvePuzzle() = 0;
@@ -39,9 +43,6 @@ signals:
 
 protected:
     enum class modeMove{up, down, right, left, size};
-    enum class modeHeuristic{none,
-                             misplacedTiles,
-                             manhattenDistance};
 
     int m_Time;
     bool m_Stop;

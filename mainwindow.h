@@ -14,6 +14,7 @@
 #include <QList>
 #include <QVector>
 #include <QThread>
+#include <QSharedPointer>
 
 #include "about.h"
 #include "puzzle.h"
@@ -27,11 +28,11 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
     const int SIZE = 9;
+
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    ~MainWindow() override;
 
 private slots:
     void on_btnSolve_clicked();
@@ -45,14 +46,14 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QGraphicsScene * scene;
+    QGraphicsScene *scene;
 
-    QMap<int, QPointF>* m_pMapCoordPuzzle;
+    QMap<int, QPointF> m_MapCoordPuzzle;
     QList<QGraphicsItem*> m_listGraphicsItem;
     QVector<int> m_StartState;
     bool m_ShowedSolution;
 
-    IAlgorithm * m_pAlgorithm;
+    QSharedPointer<IAlgorithm> m_shAlgorithm;
     QThread m_AlgorithmThread;
     QList<QVector<int>> m_Solution;
     int m_Time;
@@ -65,6 +66,9 @@ private:
     void display(const QVector<int> * const pPuzzleNumbers = nullptr);
     void updateData();
     bool checkSolvability(const QVector<int> &startState);
+    void setAlgorithm();
+    void setLimits();
+    void resetResult();
 };
 
 #endif // MAINWINDOW_H

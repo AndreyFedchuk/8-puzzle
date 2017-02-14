@@ -1,11 +1,11 @@
-#ifndef ALGORITHMDLS_H
-#define ALGORITHMDLS_H
-
 // ///////////////////////////////////////////////////////
 // Copyright © 2017 Andriy Hudz. All rights reserved.
 // email: andrey.hudz.90@gmail.com
 // https://www.facebook.com/AndreyHudz90
 // ///////////////////////////////////////////////////////
+
+#ifndef ALGORITHMDLS_H
+#define ALGORITHMDLS_H
 
 #include "ialgorithm.h"
 #include <QStack>
@@ -21,13 +21,10 @@ class AlgorithmDLS : public IAlgorithm
         int indexEmpty;
         QVector<int> nodeState;
 
-        Node():pParent(nullptr),
-            depth(0)
+        Node() : pParent(nullptr), depth(0)
         {
             Childs.resize(static_cast<int>(modeMove::size));
-            foreach(auto child, Childs)
-                child = nullptr;
-
+            Childs.fill(nullptr);
             nodeState.reserve(9);
         }
     };
@@ -47,13 +44,13 @@ public:
                           const int limitNodes,
                           const int limitTime,
                           const size_t limitMemory,
-                          const int heuristic,
+                          const modeHeuristic mode,
                           const QVector<int> FinalState = {1,2,3,4,5,6,7,8,0},
                           IAlgorithm * parent = nullptr);
-    ~AlgorithmDLS();
+    ~AlgorithmDLS() override;
 
-    bool solvePuzzle();
-    QList<QVector<int>> getSolution(int &moves) const;
+    bool solvePuzzle() override;
+    QList<QVector<int>> getSolution(int &moves) const override;
 
 private:
     void makeRoot();

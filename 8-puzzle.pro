@@ -38,4 +38,4 @@ RC_ICONS = puzzle.ico
 
 QMAKE_TARGET_CORPORIGHT = ahudz
 
-VERSION = 1.0.0.0
+VERSION = 1.1.0.0

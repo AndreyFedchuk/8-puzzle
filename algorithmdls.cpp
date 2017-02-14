@@ -10,10 +10,10 @@ AlgorithmDLS::AlgorithmDLS(const QVector<int> &State,
                            const int limitNodes,
                            const int limitTime,
                            const size_t limitMemory,
-                           const int heuristic,
+                           const modeHeuristic mode,
                            const QVector<int> FinalState,
                            IAlgorithm *parent) :
-    IAlgorithm(limitNodes, limitTime, limitMemory, heuristic, parent)
+    IAlgorithm(limitNodes, limitTime, limitMemory, mode, parent)
 {
     m_StartState = State;
     m_GoalState = FinalState;

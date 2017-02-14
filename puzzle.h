@@ -6,6 +6,7 @@
 
 #ifndef PUZZLE_H
 #define PUZZLE_H
+
 #include <QGraphicsObject>
 #include <QFont>
 #include <QPainter>
@@ -20,8 +21,8 @@ public:
     Puzzle(const QString sNum, int pointSize = 48);
     ~Puzzle();
 
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     int getID() const;
     void movePuzzle(QPointF point);

@@ -8,7 +8,6 @@
 #define ALGORITHMASTAR_H
 
 #include "ialgorithm.h"
-
 #include <QString>
 #include <QMultiMap>
 
@@ -27,7 +26,11 @@ class AlgorithmAstar : public IAlgorithm
         int nodeCost;
         int distance;
         int indexEmpty;
-        Node(): pLink_1(nullptr), pLink_2(nullptr), pLink_3(nullptr), pLink_4(nullptr), pParent(nullptr){}
+
+        Node() : pLink_1(nullptr), pLink_2(nullptr), pLink_3(nullptr), pLink_4(nullptr), pParent(nullptr)
+        {
+            nodeState.reserve(9);
+        }
     };
 
     Node * m_pRoot;
@@ -43,13 +46,13 @@ public:
                             const int limitNodes,
                             const int limitTime,
                             const size_t limitMemory,
-                            const int heuristic,
+                            const modeHeuristic mode,
                             const QVector<int> FinalState = {1,2,3,4,5,6,7,8,0},
                             IAlgorithm * parent = nullptr);
-    ~AlgorithmAstar();
+    ~AlgorithmAstar() override;
 
-    bool solvePuzzle();
-    QList<QVector<int> > getSolution(int &moves) const;
+    bool solvePuzzle() override;
+    QList<QVector<int> > getSolution(int &moves) const override;
 
 private:
     void makeRoot();
