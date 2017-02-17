@@ -17,47 +17,42 @@ AlgorithmDLS::AlgorithmDLS(const QVector<int> &State,
 {
     m_StartState = State;
     m_GoalState = FinalState;
-    m_pRoot = nullptr;
+    m_shRoot = nullptr;
     m_Success = false;
     m_DepthLimit = 26;
 
-    m_SizeOfNode = (sizeof(int) * 11) + (sizeof(Node*) * 8);
+    m_SizeOfNode = sizeof(int) * 11
+            + sizeof(void*) * 3
+            + sizeof(QSharedPointer<Node>) * 4
+            + sizeof(QWeakPointer<Node>);        // incorrect!!!
 }
 
-AlgorithmDLS::~AlgorithmDLS()
-{
-    if(!m_StackOpen.isEmpty())
-        qDeleteAll(m_StackOpen);
-
-    if(!m_ListClose.isEmpty())
-        qDeleteAll(m_ListClose);
-}
 
 bool AlgorithmDLS::solvePuzzle()
 {
     makeRoot();
 
-    m_StackOpen.push(m_pRoot);
-    Node * pCurNode;
+    m_StackOpen.push(m_shRoot);
+    QSharedPointer<Node> shCurNode;
 
     time_t finish, start = clock();
 
     while(!m_StackOpen.isEmpty())
     {
-        pCurNode = m_StackOpen.pop();
-        m_ListClose.push_back(pCurNode);
+        shCurNode = m_StackOpen.pop();
+        m_ListClose.push_back(shCurNode);
 
-        if(isSuccess(pCurNode)
+        if(isSuccess(shCurNode)
                 || checkLimits(start))
             break;
 
         emit nodesInMemory(m_StackOpen.size());
         emit createdNodes(m_CreatedNodes);
 
-        if(pCurNode->depth >= m_DepthLimit)
+        if(shCurNode->depth >= m_DepthLimit)
             continue;
 
-        makeStates(pCurNode);
+        makeStates(shCurNode);
     }
     finish = clock();
     m_Time = finish - start;
@@ -74,116 +69,121 @@ QList<QVector<int> > AlgorithmDLS::getSolution(int &moves) const
 
 void AlgorithmDLS::makeRoot()
 {
-    m_pRoot = new Node();
-    m_pRoot->depth = 0;
-    m_pRoot->nodeState = m_StartState;
-    m_pRoot->indexEmpty = m_pRoot->nodeState.indexOf(0);
+    if(!m_StackOpen.isEmpty())
+        m_StackOpen.clear();
+    if(!m_ListClose.isEmpty())
+        m_ListClose.clear();
+
+    m_shRoot = QSharedPointer<Node>::create();
+    m_shRoot->depth = 0;
+    m_shRoot->nodeState = m_StartState;
+    m_shRoot->indexEmpty = m_shRoot->nodeState.indexOf(0);
 }
 
 
-bool AlgorithmDLS::isSuccess(const Node * const pCurNode)
+bool AlgorithmDLS::isSuccess(const QSharedPointer<Node> &shCurNode)
 {
 
-    if(pCurNode->nodeState == m_GoalState)
+    if(shCurNode->nodeState == m_GoalState)
     {
         m_Success = true;
-        buildResult(pCurNode);
+        buildResult(shCurNode);
     }
 
     return m_Success;
 }
 
 
-void AlgorithmDLS::buildResult(const Node *pCurNode)
+void AlgorithmDLS::buildResult(const QSharedPointer<Node> &shCurNode)
 {
     m_ListResult.clear();
 
-    while(pCurNode != nullptr)
+    auto shTmp = shCurNode;
+    while(!shTmp.isNull())
     {
-        m_ListResult.push_front(pCurNode->nodeState);
-        pCurNode = pCurNode->pParent;
+        m_ListResult.push_front(shTmp->nodeState);
+        shTmp = shTmp->shParent;
     }
 }
 
 
-void AlgorithmDLS::makeStates(AlgorithmDLS::Node * const pCurNode)
+void AlgorithmDLS::makeStates(QSharedPointer<Node> &shCurNode)
 {
-    for(int i(0); i < pCurNode->Childs.size(); i++)
+    for(int i(0); i < shCurNode->Childs.size(); i++)
     {
-        pCurNode->Childs[i] = new Node();
-        if(makeMove(pCurNode, pCurNode->Childs[i], static_cast<modeMove>(i))
-                && checkNewNode(pCurNode->Childs[i]))
+        shCurNode->Childs[i] = QSharedPointer<Node>::create();
+        if(makeMove(shCurNode, shCurNode->Childs[i], static_cast<modeMove>(i))
+                && checkNewNode(shCurNode->Childs[i]))
         {
-            m_StackOpen.push(pCurNode->Childs[i]);
+            m_StackOpen.push(shCurNode->Childs[i]);
             m_CreatedNodes++;
         }
         else
         {
-            delete pCurNode->Childs[i];
-            pCurNode->Childs[i] = nullptr;
+            shCurNode->Childs[i].reset();
         }
     }
 }
 
-bool AlgorithmDLS::makeMove(AlgorithmDLS::Node * const pCurNode,
-                            AlgorithmDLS::Node * const pNodeChild,
+bool AlgorithmDLS::makeMove(QSharedPointer<Node> &shCurNode,
+                            QSharedPointer<Node> &shChildNode,
                             modeMove mode)
 {
     bool moveCompleted(true);
 
-    pNodeChild->nodeState = pCurNode->nodeState;
-    pNodeChild->indexEmpty = pCurNode->indexEmpty;
-    pNodeChild->depth = pCurNode->depth + 1;
+    shChildNode->nodeState = shCurNode->nodeState;
+    shChildNode->indexEmpty = shCurNode->indexEmpty;
+    shChildNode->depth = shCurNode->depth + 1;
 
     switch(mode)
     {
     case modeMove::up:
-        if(pNodeChild->indexEmpty > 2)
+        if(shChildNode->indexEmpty > 2)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty - 3]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty - 3]);
 
-            pNodeChild->indexEmpty -= 3;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->indexEmpty -= 3;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
         break;
 
     case modeMove::down:
-        if(pNodeChild->indexEmpty < 6)
+        if(shChildNode->indexEmpty < 6)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty + 3]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty + 3]);
 
-            pNodeChild->indexEmpty += 3;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->indexEmpty += 3;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
         break;
 
     case modeMove::right:
-        if(pNodeChild->indexEmpty%3 != 2)
+        if(shChildNode->indexEmpty%3 != 2)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty + 1]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty + 1]);
 
-            pNodeChild->indexEmpty += 1;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->indexEmpty += 1;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
         break;
 
     case modeMove::left:
-        if(pNodeChild->indexEmpty%3 != 0)
+        if(shChildNode->indexEmpty%3 != 0)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty - 1]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty - 1]);
 
-            pNodeChild->indexEmpty -= 1;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->indexEmpty -= 1;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
@@ -198,18 +198,18 @@ bool AlgorithmDLS::makeMove(AlgorithmDLS::Node * const pCurNode,
 }
 
 
-bool AlgorithmDLS::checkNewNode(const AlgorithmDLS::Node * const pCurNode)
+bool AlgorithmDLS::checkNewNode(const QSharedPointer<Node> &shCurNode)
 {
     bool bOk(true);
 
     foreach(auto node, m_StackOpen)
-        if(pCurNode->nodeState == node->nodeState
-                && pCurNode->depth >= node->depth)
+        if(shCurNode->nodeState == node->nodeState
+                && shCurNode->depth >= node->depth)
             bOk = false;
 
     foreach(auto node, m_ListClose)
-        if(pCurNode->nodeState == node->nodeState)
-            if(pCurNode->depth >= node->depth)
+        if(shCurNode->nodeState == node->nodeState)
+            if(shCurNode->depth >= node->depth)
                 bOk = false;
             else
                 m_ListClose.removeOne(node);
@@ -242,20 +242,3 @@ bool AlgorithmDLS::checkLimits(const time_t start)
 
     return bOk;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

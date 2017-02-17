@@ -9,33 +9,34 @@
 
 #include "ialgorithm.h"
 #include <QStack>
+#include <QSharedPointer>
+#include <QWeakPointer>
 
 class AlgorithmDLS : public IAlgorithm
 {
     int m_SizeOfNode;
 
     struct Node{
-        Node * pParent;
-        QVector<Node*> Childs;
+        QWeakPointer<Node> shParent;
+        QVector<QSharedPointer<Node>> Childs;
         int depth;
         int indexEmpty;
         QVector<int> nodeState;
 
-        Node() : pParent(nullptr), depth(0)
+        Node() : depth(0)
         {
             Childs.resize(static_cast<int>(modeMove::size));
-            Childs.fill(nullptr);
             nodeState.reserve(9);
         }
     };
 
     int m_DepthLimit;
-    Node * m_pRoot;
+    QSharedPointer<Node> m_shRoot;
 
     QVector<int> m_StartState;
     QVector<int> m_GoalState;
-    QStack<Node *> m_StackOpen;
-    QList<Node *> m_ListClose;
+    QStack<QSharedPointer<Node>> m_StackOpen;
+    QList<QSharedPointer<Node>> m_ListClose;
     QList<QVector<int>> m_ListResult;
     bool m_Success;
 
@@ -47,18 +48,17 @@ public:
                           const modeHeuristic mode,
                           const QVector<int> FinalState = {1,2,3,4,5,6,7,8,0},
                           IAlgorithm * parent = nullptr);
-    ~AlgorithmDLS() override;
 
     bool solvePuzzle() override;
     QList<QVector<int>> getSolution(int &moves) const override;
 
 private:
     void makeRoot();
-    bool isSuccess(const Node * const pCurNode);
-    void buildResult(const Node *pCurNode);
-    void makeStates(Node * const pCurNode);
-    bool makeMove(Node * const pCurNode, Node *const pNodeChild, modeMove mode);
-    bool checkNewNode(const Node * const pCurNode);
+    bool isSuccess(const QSharedPointer<Node> &shCurNode);
+    void buildResult(const QSharedPointer<Node> &shCurNode);
+    void makeStates(QSharedPointer<Node> &shCurNode);
+    bool makeMove(QSharedPointer<Node> &shCurNode, QSharedPointer<Node> &shChildNode, modeMove mode);
+    bool checkNewNode(const QSharedPointer<Node> &shCurNode);
     bool checkLimits(const time_t start);
 };
 

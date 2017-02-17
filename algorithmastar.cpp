@@ -18,16 +18,10 @@ AlgorithmAstar::AlgorithmAstar(const QVector<int> &State,
     m_GoalState = FinalState;
     m_Success = false;
 
-    m_SizeOfNode = (sizeof(int) * 12) + (sizeof(Node*) * 7);
-}
-
-AlgorithmAstar::~AlgorithmAstar()
-{
-    if(!m_MultiMapOpen.isEmpty())
-        qDeleteAll(m_MultiMapOpen);
-
-    if(!m_ListClose.isEmpty())
-        qDeleteAll(m_ListClose);
+    m_SizeOfNode = sizeof(int) * 12
+            + sizeof(void*) * 2
+            + sizeof(QSharedPointer<Node>) * 4
+            + sizeof(QWeakPointer<Node>);        // incorrect!!!
 }
 
 
@@ -42,19 +36,19 @@ bool AlgorithmAstar::solvePuzzle()
 {
     makeRoot();
 
-    m_MultiMapOpen.insert(m_pRoot->nodeCost, m_pRoot);
+    m_MultiMapOpen.insert(m_shRoot->nodeCost, m_shRoot);
 
-    Node * pCurNode;
+    QSharedPointer<Node> shCurNode;
     time_t finish, start = clock();
     while(!m_MultiMapOpen.isEmpty())
     {
-        pCurNode = m_MultiMapOpen.first();
+        shCurNode = m_MultiMapOpen.first();
         m_MultiMapOpen.erase(m_MultiMapOpen.begin());
-        if(isSuccess(pCurNode))
+        if(isSuccess(shCurNode))
             break;
 
-        insertStates(pCurNode);
-        m_ListClose.push_back(pCurNode);
+        insertStates(shCurNode);
+        m_ListClose.push_back(shCurNode);
 
         emit nodesInMemory(m_MultiMapOpen.size());
         emit createdNodes(m_CreatedNodes);
@@ -72,27 +66,27 @@ bool AlgorithmAstar::solvePuzzle()
 void AlgorithmAstar::makeRoot()
 {
     if(!m_MultiMapOpen.isEmpty())
-        qDeleteAll(m_MultiMapOpen);
+        m_MultiMapOpen.clear();
     if(!m_ListClose.isEmpty())
-        qDeleteAll(m_ListClose);
+        m_ListClose.clear();
 
-    m_pRoot = new Node();
-    m_pRoot->nodeState = m_StartState;
-    m_pRoot->nodeCost = costCalculator(m_pRoot);
-    m_pRoot->distance = 0;
+    m_shRoot = QSharedPointer<Node>::create();
+    m_shRoot->nodeState = m_StartState;
+    m_shRoot->nodeCost = costCalculator(m_shRoot);
+    m_shRoot->distance = 0;
 
-    m_pRoot->indexEmpty = m_pRoot->nodeState.indexOf(0);
+    m_shRoot->indexEmpty = m_shRoot->nodeState.indexOf(0);
 }
 
 
-int AlgorithmAstar::costCalculator(const Node * const pCurNode) const // h1 or h2
+int AlgorithmAstar::costCalculator(const QSharedPointer<Node> &shCurNode) const // h1 or h2
 {
     int cost(0);
 
     if(m_Heuristic == modeHeuristic::misplacedTiles)
     {
-        for(auto i(0); i < pCurNode->nodeState.size(); i++)
-            if(pCurNode->nodeState[i] != m_GoalState.at(i))
+        for(auto i(0); i < shCurNode->nodeState.size(); i++)
+            if(shCurNode->nodeState[i] != m_GoalState.at(i))
                 cost++;
     }
     else if(m_Heuristic == modeHeuristic::manhattenDistance)
@@ -112,8 +106,8 @@ int AlgorithmAstar::costCalculator(const Node * const pCurNode) const // h1 or h
             //////*0 1 2 3 4 5 6 7 8*//////
         };
 
-        for(int i = 0; i < pCurNode->nodeState.size(); i++) {
-            cost += distances[i][pCurNode->nodeState[i]];
+        for(int i = 0; i < shCurNode->nodeState.size(); i++) {
+            cost += distances[i][shCurNode->nodeState[i]];
         }
     }
 
@@ -121,77 +115,61 @@ int AlgorithmAstar::costCalculator(const Node * const pCurNode) const // h1 or h
 }
 
 
-void AlgorithmAstar::insertStates(Node * const pCurNode)
+void AlgorithmAstar::insertStates(QSharedPointer<Node> &shCurNode)
 {
     // 1st LINK
-    Node * pNodeChild = new Node();
-    if(makeMove(pCurNode, pNodeChild, modeMove::up)
-            && checkNewNode(pNodeChild))
+    QSharedPointer<Node> shChildNode = QSharedPointer<Node>::create();
+    if(makeMove(shCurNode, shChildNode, modeMove::up)
+            && checkNewNode(shChildNode))
     {
-        pCurNode->pLink_1 = pNodeChild;
-        m_MultiMapOpen.insert(pNodeChild->nodeCost, pNodeChild);
+        shCurNode->shLink_1 = shChildNode;
+        m_MultiMapOpen.insert(shChildNode->nodeCost, shChildNode);
         m_CreatedNodes++;
-    }
-    else
-    {
-        delete pNodeChild;
     }
 
     // 2st LINK
-    pNodeChild = new Node();
-    if(makeMove(pCurNode, pNodeChild, modeMove::down)
-            && checkNewNode(pNodeChild))
+    shChildNode = QSharedPointer<Node>::create();
+    if(makeMove(shCurNode, shChildNode, modeMove::down)
+            && checkNewNode(shChildNode))
     {
-        pCurNode->pLink_2 = pNodeChild;
-        m_MultiMapOpen.insert(pNodeChild->nodeCost, pNodeChild);
+        shCurNode->shLink_2 = shChildNode;
+        m_MultiMapOpen.insert(shChildNode->nodeCost, shChildNode);
         m_CreatedNodes++;
-    }
-    else
-    {
-        delete pNodeChild;
     }
 
     // 3st LINK
-    pNodeChild = new Node();
-    if(makeMove(pCurNode, pNodeChild, modeMove::right)
-            && checkNewNode(pNodeChild))
+    shChildNode = QSharedPointer<Node>::create();
+    if(makeMove(shCurNode, shChildNode, modeMove::right)
+            && checkNewNode(shChildNode))
     {
-        pCurNode->pLink_3 = pNodeChild;
-        m_MultiMapOpen.insert(pNodeChild->nodeCost, pNodeChild);
+        shCurNode->shLink_3 = shChildNode;
+        m_MultiMapOpen.insert(shChildNode->nodeCost, shChildNode);
         m_CreatedNodes++;
-    }
-    else
-    {
-        delete pNodeChild;
     }
 
     // 4st LINK
-    pNodeChild = new Node();
-    if(makeMove(pCurNode, pNodeChild, modeMove::left)
-            && checkNewNode(pNodeChild))
+    shChildNode = QSharedPointer<Node>::create();
+    if(makeMove(shCurNode, shChildNode, modeMove::left)
+            && checkNewNode(shChildNode))
     {
-        pCurNode->pLink_4 = pNodeChild;
-        m_MultiMapOpen.insert(pNodeChild->nodeCost, pNodeChild);
+        shCurNode->shLink_4 = shChildNode;
+        m_MultiMapOpen.insert(shChildNode->nodeCost, shChildNode);
         m_CreatedNodes++;
-    }
-    else
-    {
-        delete pNodeChild;
     }
 }
 
 
-bool AlgorithmAstar::makeMove(Node * const pCurNode,
-                              Node * const pNodeChild,
+bool AlgorithmAstar::makeMove(QSharedPointer<Node> &shCurNode,
+                              QSharedPointer<Node> &shChildNode,
                               AlgorithmAstar::modeMove mode) // MAKE AND INIT children
 {
     bool moveCompleted(true);
     bool incorrectMove(false);
-    pNodeChild->nodeState = pCurNode->nodeState;
-    pNodeChild->indexEmpty = pNodeChild->nodeState.indexOf(0);
+    shChildNode->nodeState = shCurNode->nodeState;
+    shChildNode->indexEmpty = shChildNode->nodeState.indexOf(0);
 
-    if(pCurNode->distance > 2 &&
-            pCurNode->pParent->indexEmpty == pNodeChild->indexEmpty) // check loop
+    if(shCurNode->distance > 2 &&
+            shCurNode->shParent.lock()->indexEmpty == shChildNode->indexEmpty) // check loop
     {
         incorrectMove = true;
     }
@@ -199,56 +177,56 @@ bool AlgorithmAstar::makeMove(Node * const pCurNode,
     switch(mode)
     {
     case modeMove::up:
-        if(pNodeChild->indexEmpty > 2 && !incorrectMove)
+        if(shChildNode->indexEmpty > 2 && !incorrectMove)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty - 3]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty - 3]);
 
-            pNodeChild->distance = pCurNode->distance + 1;
-            pNodeChild->nodeCost = costCalculator(pNodeChild) + pNodeChild->distance;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->distance = shCurNode->distance + 1;
+            shChildNode->nodeCost = costCalculator(shChildNode) + shChildNode->distance;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
         break;
 
     case modeMove::down:
-        if(pNodeChild->indexEmpty < 6 && !incorrectMove)
+        if(shChildNode->indexEmpty < 6 && !incorrectMove)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty + 3]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty + 3]);
 
-            pNodeChild->distance = pCurNode->distance + 1;
-            pNodeChild->nodeCost = costCalculator(pNodeChild) + pNodeChild->distance;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->distance = shCurNode->distance + 1;
+            shChildNode->nodeCost = costCalculator(shChildNode) + shChildNode->distance;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
         break;
 
     case modeMove::right:
-        if(pNodeChild->indexEmpty%3 != 2 && !incorrectMove)
+        if(shChildNode->indexEmpty%3 != 2 && !incorrectMove)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty + 1]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty + 1]);
 
-            pNodeChild->distance = pCurNode->distance + 1;
-            pNodeChild->nodeCost = costCalculator(pNodeChild) + pNodeChild->distance;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->distance = shCurNode->distance + 1;
+            shChildNode->nodeCost = costCalculator(shChildNode) + shChildNode->distance;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
         break;
 
     case modeMove::left:
-        if(pNodeChild->indexEmpty%3 != 0 && !incorrectMove)
+        if(shChildNode->indexEmpty%3 != 0 && !incorrectMove)
         {
-            std::swap(pNodeChild->nodeState[pNodeChild->indexEmpty],
-                    pNodeChild->nodeState[pNodeChild->indexEmpty - 1]);
+            std::swap(shChildNode->nodeState[shChildNode->indexEmpty],
+                    shChildNode->nodeState[shChildNode->indexEmpty - 1]);
 
-            pNodeChild->distance = pCurNode->distance + 1;
-            pNodeChild->nodeCost = costCalculator(pNodeChild) + pNodeChild->distance;
-            pNodeChild->pParent = pCurNode;
+            shChildNode->distance = shCurNode->distance + 1;
+            shChildNode->nodeCost = costCalculator(shChildNode) + shChildNode->distance;
+            shChildNode->shParent = shCurNode;
         }
         else
             moveCompleted = false;
@@ -263,18 +241,18 @@ bool AlgorithmAstar::makeMove(Node * const pCurNode,
 }
 
 
-bool AlgorithmAstar::checkNewNode(const Node * const pCurNode)
+bool AlgorithmAstar::checkNewNode(const QSharedPointer<Node> &shCurNode)
 {
     bool bOk(true);
 
     foreach(auto node, m_MultiMapOpen)
-        if(pCurNode->nodeState == node->nodeState
-                && pCurNode->distance >= node->distance)
+        if(shCurNode->nodeState == node->nodeState
+                && shCurNode->distance >= node->distance)
             bOk = false;
 
     foreach(auto node, m_ListClose)
-        if(pCurNode->nodeState == node->nodeState)
-            if(pCurNode->distance >= node->distance)
+        if(shCurNode->nodeState == node->nodeState)
+            if(shCurNode->distance >= node->distance)
                 bOk = false;
             else
                 m_ListClose.removeOne(node);
@@ -283,27 +261,28 @@ bool AlgorithmAstar::checkNewNode(const Node * const pCurNode)
 }
 
 
-bool AlgorithmAstar::isSuccess(const Node * const pCurNode)
+bool AlgorithmAstar::isSuccess(const QSharedPointer<Node> &shCurNode)
 {
 
-    if(pCurNode->nodeState == m_GoalState)
+    if(shCurNode->nodeState == m_GoalState)
     {
         m_Success = true;
-        buildResult(pCurNode);
+        buildResult(shCurNode);
     }
 
     return m_Success;
 }
 
 
-void AlgorithmAstar::buildResult(const Node *pCurNode)
+void AlgorithmAstar::buildResult(const QSharedPointer<Node> &shCurNode)
 {
     m_ListResult.clear();
 
-    while(pCurNode != nullptr)
+    auto shTmp = shCurNode;
+    while(!shTmp.isNull())
     {
-        m_ListResult.push_front(pCurNode->nodeState);
-        pCurNode = pCurNode->pParent;
+        m_ListResult.push_front(shTmp->nodeState);
+        shTmp = shTmp->shParent;
     }
 }
 

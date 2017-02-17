@@ -178,34 +178,31 @@ void MainWindow::setAlgorithm()
     switch(index)
     {
     case 0:
-        m_shAlgorithm = QSharedPointer<AlgorithmAstar>(
-                            new AlgorithmAstar(m_StartState,
-                                               m_LimitStates,
-                                               m_LimitTime,
-                                               m_LimitMemory,
-                                               modeHeuristic::misplacedTiles));
+        m_shAlgorithm = QSharedPointer<AlgorithmAstar>::create(m_StartState,
+                                                               m_LimitStates,
+                                                               m_LimitTime,
+                                                               m_LimitMemory,
+                                                               modeHeuristic::misplacedTiles);
         break;
 
     case 1:
-        m_shAlgorithm = QSharedPointer<AlgorithmDLS>(
-                            new AlgorithmDLS(m_StartState,
-                                             m_LimitStates,
-                                             m_LimitTime,
-                                             m_LimitMemory,
-                                             modeHeuristic::none));
+        m_shAlgorithm = QSharedPointer<AlgorithmDLS>::create(m_StartState,
+                                                             m_LimitStates,
+                                                             m_LimitTime,
+                                                             m_LimitMemory,
+                                                             modeHeuristic::none);
         break;
 
     case 2:
-        m_shAlgorithm = QSharedPointer<AlgorithmAstar>(
-                            new AlgorithmAstar(m_StartState,
-                                               m_LimitStates,
-                                               m_LimitTime,
-                                               m_LimitMemory,
-                                               modeHeuristic::manhattenDistance));
+        m_shAlgorithm = QSharedPointer<AlgorithmAstar>::create(m_StartState,
+                                                               m_LimitStates,
+                                                               m_LimitTime,
+                                                               m_LimitMemory,
+                                                               modeHeuristic::manhattenDistance);
         break;
 
     default:
-        m_shAlgorithm = nullptr;
+        m_shAlgorithm.reset();
     }
 }
 
@@ -279,7 +276,7 @@ void MainWindow::on_btnShowSolution_clicked()
     m_ShowedSolution = true;
 
     ui->btnSolve->setEnabled(true);
-    ui->btnShowSolution->setEnabled(true);    
+    ui->btnShowSolution->setEnabled(true);
 }
 
 void MainWindow::on_actionAbout_triggered()
