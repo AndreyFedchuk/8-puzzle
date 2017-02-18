@@ -19,14 +19,16 @@ SOURCES += main.cpp\
     algorithmastar.cpp \
     ialgorithm.cpp \
     about.cpp \
-    algorithmdls.cpp
+    algorithmdls.cpp \
+    logging.cpp
 
 HEADERS  += mainwindow.h \
     puzzle.h \
     algorithmastar.h \
     ialgorithm.h \
     about.h \
-    algorithmdls.h
+    algorithmdls.h \
+    logging.h
 
 FORMS    += mainwindow.ui \
     about.ui
@@ -38,4 +40,4 @@ RC_ICONS = puzzle.ico
 
 QMAKE_TARGET_CORPORIGHT = ahudz
 
-VERSION = 1.1.0.0
+VERSION = 1.2.0.0

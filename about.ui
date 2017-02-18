@@ -115,7 +115,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Version: 1.0.0</string>
+    <string>Version: 1.2.0</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

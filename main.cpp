@@ -6,12 +6,22 @@
 
 #include "mainwindow.h"
 #include <QApplication>
+#include <stdexcept>
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+    try
+    {
+        QApplication a(argc, argv);
+        MainWindow w;
+        w.show();
+        a.exec();
+    }
+    catch(std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 
-    return a.exec();
+    return 0;
 }

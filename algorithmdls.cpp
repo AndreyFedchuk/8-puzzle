@@ -17,7 +17,6 @@ AlgorithmDLS::AlgorithmDLS(const QVector<int> &State,
 {
     m_StartState = State;
     m_GoalState = FinalState;
-    m_shRoot = nullptr;
     m_Success = false;
     m_DepthLimit = 26;
 
@@ -209,10 +208,12 @@ bool AlgorithmDLS::checkNewNode(const QSharedPointer<Node> &shCurNode)
 
     foreach(auto node, m_ListClose)
         if(shCurNode->nodeState == node->nodeState)
+        {
             if(shCurNode->depth >= node->depth)
                 bOk = false;
             else
                 m_ListClose.removeOne(node);
+        }
 
     return bOk;
 }

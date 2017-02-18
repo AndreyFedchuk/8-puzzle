@@ -9,8 +9,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    m_shAlgorithm(nullptr)
+    ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
@@ -50,7 +49,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
 void MainWindow::on_btnSolve_clicked()
 {
     if(parsingAndChecking())
@@ -78,6 +76,73 @@ void MainWindow::on_btnSolve_clicked()
 
 bool MainWindow::parsingAndChecking()
 {
+    bool bOk(true);
+    if(!parsing())
+    {
+        bOk = false;
+        m_StartState.clear();
+        QMessageBox::critical(this,
+                              "Not a valid input!",
+                              "The numbers must not repeat.\n "
+                              "Enter a unique 9 digits [0 - 8].",
+                              QMessageBox::Ok);
+    }
+    else if(!checkSolvability(m_StartState))
+    {
+        bOk = false;
+        m_StartState.clear();
+        QMessageBox::critical(this,
+                              "Unsolvable!",
+                              "This set of puzzles unsolvable",
+                              QMessageBox::Ok);
+    }
+
+    return bOk;
+}
+
+void MainWindow::display(const QVector<int> * const pPuzzleNumbers)
+{
+    m_listGraphicsItem.clear();
+
+    if(pPuzzleNumbers != nullptr)
+        m_StartState = *pPuzzleNumbers;
+    int index = 1;
+    foreach(auto Num, m_StartState)
+    {
+        if(Num > 0)
+        {
+            auto item = QSharedPointer<Puzzle>::create(QString::number(Num));
+            item->setPos(m_MapCoordPuzzle.value(index));
+            scene->addItem(item.data());
+            m_listGraphicsItem.append(item);
+        }
+        index++;
+    }
+}
+
+void MainWindow::updateData()
+{
+    resetResult();
+
+    setLimits();
+
+    setAlgorithm();
+}
+
+bool MainWindow::checkSolvability(const QVector<int> &startState)
+{
+    int inversions = 0;
+    for (int i(0); i < (SIZE); ++i)
+        for (int j(i); j < (SIZE); ++j)
+            if (startState[i] > startState[j]
+                    && startState[j] != 0)
+                inversions++;
+
+    return (inversions % 2 == 0);
+}
+
+bool MainWindow::parsing()
+{
     m_StartState.clear();
 
     bool bOk(true);
@@ -95,81 +160,10 @@ bool MainWindow::parsingAndChecking()
         m_StartState.append(str.toInt());
     }
 
-    if(!bOk || m_StartState.size() != SIZE)
-    {
+    if(m_StartState.size() != SIZE)
         bOk = false;
-        m_StartState.clear();
-        QMessageBox * msg = new QMessageBox(QMessageBox::Critical,
-                                "Not a valid input!",
-                                "The numbers must not repeat.\n "
-                                "Enter a unique 9 digits [0 - 8].",
-                                QMessageBox::Ok);
-        msg->exec();
-        msg->deleteLater();
-    }
-    else if(!checkSolvability(m_StartState))
-    {
-        bOk = false;
-        m_StartState.clear();
-        QMessageBox * msg = new QMessageBox(QMessageBox::Critical,
-                                "Unsolvable!",
-                                "This set of puzzles unsolvable",
-                                QMessageBox::Ok);
-        msg->exec();
-        msg->deleteLater();
-    }
-
 
     return bOk;
-}
-
-void MainWindow::display(const QVector<int> * const pPuzzleNumbers)
-{
-    m_listGraphicsItem.clear();
-    scene->clear();
-
-    if(pPuzzleNumbers != nullptr)
-        m_StartState = *pPuzzleNumbers;
-    int index = 1;
-    foreach(auto Num, m_StartState)
-    {
-        if(Num > 0)
-        {
-            auto item = new Puzzle(QString::number(Num));
-            item->setPos(m_MapCoordPuzzle.value(index));
-            scene->addItem(item);
-            m_listGraphicsItem.append(item);
-        }
-        index++;
-    }
-}
-
-void MainWindow::updateData()
-{
-    setLimits();
-
-    m_ShowedSolution = false;
-
-    resetResult();
-
-    setAlgorithm();
-
-    if(!m_Solution.isEmpty())
-        m_Solution.clear();
-
-    ui->btnShowSolution->setEnabled(false);
-}
-
-bool MainWindow::checkSolvability(const QVector<int> &startState)
-{
-    int inversions = 0;
-    for (int i(0); i < (SIZE); ++i)
-        for (int j(i); j < (SIZE); ++j)
-            if (startState[i] > startState[j]
-                    && startState[j] != 0)
-                inversions++;
-
-    return (inversions % 2 == 0);
 }
 
 void MainWindow::setAlgorithm()
@@ -204,6 +198,8 @@ void MainWindow::setAlgorithm()
     default:
         m_shAlgorithm.reset();
     }
+
+    Q_ASSERT(!m_shAlgorithm.isNull());
 }
 
 void MainWindow::setLimits()
@@ -233,6 +229,22 @@ void MainWindow::resetResult()
     ui->lblNumMoves->setText(QString::number(m_Moves));
 
     ui->lblCreatedNodes->setText("0");
+
+    if(!m_Solution.isEmpty())
+        m_Solution.clear();
+    ui->btnShowSolution->setEnabled(false);
+    m_ShowedSolution = false;
+}
+
+void MainWindow::logging()
+{
+    if(!m_Logging.logingInFile(&m_Solution))
+    {
+        QMessageBox::warning(this,
+                             "Error",
+                             "Error while recording in file.",
+                             QMessageBox::Ok);
+    }
 }
 
 void MainWindow::on_btnShuffle_clicked()
@@ -310,13 +322,15 @@ void MainWindow::printResult(bool success)
                                  "Success!",
                                  "The 8-puzzle problem was solved.",
                                  QMessageBox::Ok);
+
+        logging();
     }
     else
     {
-        QMessageBox::information(this,
-                                 "Stoped!",
-                                 "The search was stopped.",
-                                 QMessageBox::Ok);
+        QMessageBox::warning(this,
+                             "Stoped!",
+                             "The search was stopped.",
+                             QMessageBox::Ok);
         m_StartState = {1,2,3,4,5,6,7,8,0};
         display(&m_StartState);
     }
@@ -332,4 +346,20 @@ void MainWindow::printCountNodes(int countNodes)
 void MainWindow::printNodesInMemory(int nodesInMemory)
 {
     ui->lblNodesInMemory->setText(QString::number(nodesInMemory));
+}
+
+void MainWindow::on_actionOpenLogging_triggered()
+{
+    if(!m_Logging.showLoggingFile())
+    {
+        QMessageBox::critical(this,
+                             "ERROR",
+                             "Error, loggin file not open!",
+                             QMessageBox::Ok);
+    }
+}
+
+void MainWindow::on_actionAboutQt_triggered()
+{
+    QMessageBox::aboutQt(this);
 }

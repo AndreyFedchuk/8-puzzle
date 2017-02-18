@@ -252,10 +252,12 @@ bool AlgorithmAstar::checkNewNode(const QSharedPointer<Node> &shCurNode)
 
     foreach(auto node, m_ListClose)
         if(shCurNode->nodeState == node->nodeState)
+        {
             if(shCurNode->distance >= node->distance)
                 bOk = false;
             else
                 m_ListClose.removeOne(node);
+        }
 
     return bOk;
 }

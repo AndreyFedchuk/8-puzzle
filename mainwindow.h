@@ -20,6 +20,7 @@
 #include "puzzle.h"
 #include "algorithmastar.h"
 #include "algorithmdls.h"
+#include "logging.h"
 
 namespace Ui {
 class MainWindow;
@@ -44,14 +45,19 @@ private slots:
     void printCountNodes(int countNodes);
     void printNodesInMemory(int nodesInMemory);
 
+    void on_actionOpenLogging_triggered();
+
+    void on_actionAboutQt_triggered();
+
 private:
     Ui::MainWindow *ui;
     QGraphicsScene *scene;
 
     QMap<int, QPointF> m_MapCoordPuzzle;
-    QList<QGraphicsItem*> m_listGraphicsItem;
+    QList<QSharedPointer<QGraphicsItem>> m_listGraphicsItem;
     QVector<int> m_StartState;
     bool m_ShowedSolution;
+    Logging m_Logging;
 
     QSharedPointer<IAlgorithm> m_shAlgorithm;
     QThread m_AlgorithmThread;
@@ -66,9 +72,11 @@ private:
     void display(const QVector<int> * const pPuzzleNumbers = nullptr);
     void updateData();
     bool checkSolvability(const QVector<int> &startState);
+    bool parsing();
     void setAlgorithm();
     void setLimits();
     void resetResult();
+    void logging();
 };
 
 #endif // MAINWINDOW_H
